@@ -28,10 +28,27 @@ class PersonCreateAPIView(generics.CreateAPIView):
             return Response({'message': 'Person created successfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class PersonUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = PersonSerializer
+
+    def get_queryset(self):
+        return Person.objects.all()
+    
+    def put(self, request, pk):
+        person = Person.objects.get(pk=pk)
+        serializer = PersonSerializer(person, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Person updated successfully'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class PersonDestroyAPIView(generics.DestroyAPIView):
     serializer_class = PersonSerializer
     
-    def destroy(self, request, pk):
+    def get_queryset(self):
+        return Person.objects.all()
+
+    def destroy(self, request, pk=None):
         try:
             person = Person.objects.get(pk=pk)
             person.delete()
@@ -86,9 +103,26 @@ class TaskCreateAPIView(generics.CreateAPIView):
             serializer.save()
             return Response({'message': 'Task created successfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class TaskUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = TaskSerializer
+    
+    def get_queryset(self):
+        return Task.objects.all()
+    
+    def put(self, request, pk):
+        task = Task.objects.get(pk=pk)
+        serializer = TaskSerializer(task, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Task updated successfully'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TaskDestroyAPIView(generics.DestroyAPIView):
     serializer_class = TaskSerializer
+
+    def get_queryset(self):
+        return Task.objects.all()
     
     def destroy(self, request, pk):
         try:
