@@ -34,7 +34,7 @@ class Task(models.Model):
     title = models.CharField('Task tittle', max_length=150)
     description = models.TextField('Task description')
     deadline_date = models.DateField('Task deadline date', validators=[limit_date], auto_now=False, auto_now_add=False)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    person = models.ForeignKey(Person, related_name='tasks', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = ('Task')
