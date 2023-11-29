@@ -1,9 +1,14 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 def is_digit(value):
     if not value.isdigit():
         raise ValidationError('Must be number')
+    
+def limit_date(value):
+    if value <= timezone.now().date():
+        raise ValidationError('Must be a future date')
 
 class Person(models.Model):
 
@@ -28,7 +33,7 @@ class Person(models.Model):
 class Task(models.Model):
     title = models.CharField('Task tittle', max_length=150)
     description = models.TextField('Task description')
-    deadline_date = models.DateField('Task deadline date', auto_now=False, auto_now_add=False)
+    deadline_date = models.DateField('Task deadline date', validators=[limit_date], auto_now=False, auto_now_add=False)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
 
     class Meta:
