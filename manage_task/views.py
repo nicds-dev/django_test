@@ -47,7 +47,29 @@ class TaskListAPIView(generics.ListAPIView):
     serializer_class = TaskSerializer
 
     def get_queryset(self):
-        return Task.objects.all()
+        queryset = Task.objects.all()
+    
+        # Filter by deadline date
+        deadline_date = self.request.query_params.get('deadline_date', None)
+
+        if deadline_date:
+            queryset = queryset.filter(deadline_date=deadline_date)
+
+        # Filter by range of deadline dates
+        start_date = self.request.query_params.get('start_date', None)
+        end_date = self.request.query_params.get('end_date', None)
+
+        if start_date and end_date:
+            queryset = queryset.filter(deadline_date__range=[start_date, end_date])
+
+        # Filter by person (type and document number)
+        document_type = self.request.query_params.get('document_type', None)
+        document_number = self.request.query_params.get('document_number', None)
+        
+        if document_type and document_number:
+            queryset = queryset.filter(person__document_type=document_type, person__document_number=document_number)
+
+        return queryset
     
 class TaskRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = TaskSerializer
