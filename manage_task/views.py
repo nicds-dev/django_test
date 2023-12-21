@@ -1,5 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.exceptions import ParseError, NotFound
+from datetime import datetime
 from .models import Person, Task
 from .serializers import PersonSerializer, TaskSerializer
 
@@ -65,29 +67,48 @@ class TaskListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Task.objects.all()
+
+        # Get the filters from the query parameters
+        filters = {}
     
         # Filter by deadline date
-        deadline_date = self.request.query_params.get('deadline_date', None)
-
-        if deadline_date:
-            queryset = queryset.filter(deadline_date=deadline_date)
-
+        deadline_date_str = self.request.query_params.get('deadline_date', None)
+        if deadline_date_str:
+            try:
+                filters['deadline_date'] = datetime.strptime(deadline_date_str, '%Y-%m-%d')
+            except (ValueError, TypeError) as e:
+                raise ParseError(f'Invalid deadline date format or value: {e}. Please use YYYY-MM-DD format.')
+            
         # Filter by range of deadline dates
-        start_date = self.request.query_params.get('start_date', None)
-        end_date = self.request.query_params.get('end_date', None)
+        start_date_str = self.request.query_params.get('start_date', None)
+        end_date_str = self.request.query_params.get('end_date', None)
 
-        if start_date and end_date:
-            queryset = queryset.filter(deadline_date__range=[start_date, end_date])
-
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+                filters['deadline_date__range'] = [start_date, end_date]
+            except (ValueError, TypeError) as e:
+                raise ParseError(f'Invalid deadline date range format: {e}. Please use YYYY-MM-DD format.')
+            
         # Filter by person (type and document number)
         document_type = self.request.query_params.get('document_type', None)
         document_number = self.request.query_params.get('document_number', None)
-        
-        if document_type and document_number:
-            queryset = queryset.filter(person__document_type=document_type, person__document_number=document_number)
 
+        if document_type is not None and document_number is not None:
+            filters['person__document_type'] = document_type
+            filters['person__document_number'] = document_number
+        
+        # Apply the filters
+        if filters:
+            queryset = queryset.filter(**filters)
+
+        if not queryset.exists():
+            raise NotFound('No tasks found for the given filters.')
+        
         return queryset
-    
+
+
 class TaskRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = TaskSerializer
     

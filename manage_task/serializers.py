@@ -9,11 +9,16 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'last_name', 'document_type', 'document_number', 'email', 'tasks']
     
     def get_tasks(self, obj):
-        tasks = obj.tasks.all()
-        return tasks.values_list('title', 'description', 'deadline_date')
+        tasks = Task.objects.filter(person_id=obj.id)
+        task_data = TaskSerializer(tasks, many=True).data
+
+        # Remove the 'person' field from the task data only when person's model is listed
+        for task in task_data:
+            task.pop('person', None)
+
+        return task_data
 
 class TaskSerializer(serializers.ModelSerializer):
-    person = serializers.SlugRelatedField(slug_field='name', queryset=Person.objects.all())
 
     class Meta:
         model = Task
